@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Past Tense Mastery | EdTech App</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+        }
+
+        body {
+            font-family: 'Inter', 'Rubik', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #3b0764 50%, #0c4a6e 100%);
+            background-attachment: fixed;
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        /* Glassmorphism Utilities */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .glass-btn {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .glass-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .glass-btn:active {
+            transform: translateY(1px);
+        }
+
+        .flip-card-container {
+            perspective: 1000px;
+            width: 100%;
+            max-width: 400px;
+            height: 450px;
+            margin: 0 auto;
+        }
+
+        .flip-card {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+
+        .flip-card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            border-radius: 1.5rem;
+            overflow: hidden; /* מונע מהתמונה לגלוש החוצה בשום מצב */
+        }
+
+        .flip-card-front {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .flip-card-back {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(147, 51, 234, 0.2) 100%);
+            border: 1px solid rgba(255,255,255,0.2);
+            transform: rotateY(180deg);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-image-container {
+            height: calc(100% - 90px); /* גובה קבוע ומדויק במקום גמישות */
+            width: 100%;
+            position: relative;
+            background: rgba(0,0,0,0.1);
+        }
+
+        .card-image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block; /* מונע רווחים מיותרים בתחתית תמונה */
+        }
+
+        .card-text-container {
+            width: 100%;
+            height: 90px; /* גובה קבוע לחלוטין באזור הטקסט */
+            flex-shrink: 0; /* מונע הקטנה של האזור הזה */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.25);
+        }
+
+        .pair-card {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s, border 0.2s, opacity 0.3s;
+            border: 3px solid transparent;
+        }
+
+        .pair-card:hover:not(.matched-card) {
+            transform: scale(1.02);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .selected-card {
+            border-color: #60a5fa !important; /* תכלת מואר */
+            box-shadow: 0 0 20px rgba(96, 165, 250, 0.6);
+            transform: scale(1.04) !important;
+            z-index: 10;
+        }
+
+        .matched-card {
+            border-color: #22c55e !important; /* ירוק */
+            background: rgba(34, 197, 94, 0.3) !important;
+            opacity: 0.5;
+            pointer-events: none;
+            transform: scale(0.95) !important;
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.4);
+        }
+
+        .error-card {
+            border-color: #ef4444 !important; /* אדום בולט */
+            background: rgba(239, 68, 68, 0.25) !important;
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+
+        .error-shake {
+            animation: shake 0.4s ease-in-out;
+        }
+
+        /* Confetti Canvas */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .tts-btn { z-index: 10; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4">
+
+    <!-- Confetti Canvas for Gamification -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <main class="w-full max-w-5xl min-h-[80vh] flex flex-col relative z-10 glass-panel rounded-3xl p-6 md:p-8 shadow-2xl">
+        
+        <!-- ================= HOME SCREEN ================= -->
+        <section id="home-screen" class="flex-1 flex flex-col items-center justify-center text-center space-y-12 py-10">
+            <div class="space-y-4">
+                <div class="inline-block p-4 rounded-full bg-white/10 mb-2">
+                    <i class="fa-solid fa-graduation-cap text-5xl text-blue-300"></i>
+                </div>
+                <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-200 to-purple-200" dir="ltr">
+                    Past Tense<br>Mastery
+                </h1>
+                <p class="text-lg md:text-xl text-blue-100/80 font-medium max-w-md mx-auto">
+                    שלוט בפעלי עבר באנגלית בצורה אינטראקטיבית, חכמה ומהנה.
+                </p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-6 w-full max-w-2xl justify-center">
+                <button onclick="app.startMode('flashcards')" class="glass-btn flex-1 flex flex-col items-center p-8 rounded-2xl gap-4 group">
+                    <i class="fa-regular fa-clone text-4xl text-blue-300 group-hover:text-white transition-colors"></i>
+                    <div>
+                        <h2 class="text-2xl font-bold mb-1">כרטיסיות למידה</h2>
+                        <p class="text-sm text-gray-300">למד מילים חדשות עם תמונות ושמע</p>
+                    </div>
+                </button>
+
+                <button onclick="app.startMode('match')" class="glass-btn flex-1 flex flex-col items-center p-8 rounded-2xl gap-4 group">
+                    <i class="fa-solid fa-gamepad text-4xl text-purple-300 group-hover:text-white transition-colors"></i>
+                    <div>
+                        <h2 class="text-2xl font-bold mb-1">משחק התאמה</h2>
+                        <p class="text-sm text-gray-300">מצא את הזוגות המתאימים</p>
+                    </div>
+                </button>
+            </div>
+        </section>
+
+        <!-- ================= FLASHCARDS SCREEN ================= -->
+        <section id="flashcards-screen" class="hidden flex-1 flex flex-col h-full relative">
+            <div class="flex justify-between items-center mb-8">
+                <button onclick="app.goHome()" class="glass-btn px-4 py-2 rounded-xl flex items-center gap-2">
+                    <i class="fa-solid fa-arrow-right"></i> חזור
+                </button>
+                <div class="text-lg font-bold text-blue-200" dir="ltr">
+                    <span id="fc-current">1</span> / <span id="fc-total">30</span>
+                </div>
+            </div>
+
+            <div class="flex-1 flex flex-col items-center justify-center w-full my-auto">
+                <div class="flip-card-container">
+                    <div id="flashcard" class="flip-card" onclick="app.flipCard()">
+                        <!-- Front (English) -->
+                        <div class="flip-card-front relative">
+                            <button onclick="app.playAudio(event, app.currentWord.eng)" class="tts-btn absolute top-6 right-6 glass-btn w-12 h-12 rounded-full flex items-center justify-center text-xl hover:bg-white/30 text-blue-200">
+                                <i class="fa-solid fa-volume-high"></i>
+                            </button>
+                            <h2 id="fc-word-eng" class="text-5xl md:text-6xl font-bold tracking-wider" dir="ltr">Word</h2>
+                            <p class="text-sm text-white/50 mt-6 absolute bottom-6">לחץ כדי להפוך <i class="fa-solid fa-rotate ms-1"></i></p>
+                        </div>
+                        
+                        <!-- Back (Hebrew + Image) -->
+                        <div class="flip-card-back">
+                            <div class="card-image-container">
+                                <img id="fc-image" src="" alt="Word Illustration">
+                            </div>
+                            <div class="card-text-container">
+                                <h2 id="fc-word-heb" class="text-4xl font-bold text-center px-4">תרגום</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-4 mt-10 w-full max-w-md justify-between" dir="ltr">
+                    <button onclick="app.prevCard()" class="glass-btn px-6 py-3 rounded-xl flex items-center gap-2 font-semibold">
+                        <i class="fa-solid fa-chevron-left"></i> Prev
+                    </button>
+                    <button onclick="app.nextCard()" class="glass-btn px-6 py-3 rounded-xl flex items-center gap-2 font-semibold">
+                        Next <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= NEW PAIRS MATCH GAME SCREEN ================= -->
+        <section id="match-screen" class="hidden flex-1 flex flex-col w-full h-full">
+            <div class="flex justify-between items-center mb-6">
+                <button onclick="app.confirmExitMatch()" class="glass-btn px-4 py-2 rounded-xl flex items-center gap-2">
+                    <i class="fa-solid fa-xmark"></i> יציאה
+                </button>
+                
+                <div class="flex items-center gap-3 glass-panel px-5 py-2 rounded-xl">
+                    <i class="fa-solid fa-link text-purple-300"></i>
+                    <div class="text-lg font-bold text-white">
+                        זוגות שנמצאו: <span id="match-pairs-count" class="text-2xl text-purple-300 ms-1 font-extrabold">0</span> / 7
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-1 flex flex-col items-center justify-center w-full">
+                <!-- Grid עבור הכרטיסיות: מותאם אישית כדי להציג עד 5 בעמודה -->
+                <div id="pairs-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 w-full max-w-4xl pb-4">
+                    <!-- הקלפים יוזרקו לכאן דרך ה-JavaScript -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= MATCH END SCREEN ================= -->
+        <section id="match-end-screen" class="hidden flex-1 flex flex-col items-center justify-center text-center space-y-8 py-10">
+            <div class="relative">
+                <i class="fa-solid fa-trophy text-8xl text-yellow-400 drop-shadow-[0_0_30px_rgba(250,204,21,0.6)]"></i>
+            </div>
+            <div>
+                <h2 class="text-4xl md:text-5xl font-bold mb-4">אלופים!</h2>
+                <p class="text-2xl text-blue-200 font-medium">מצאתם את כל הזוגות בהצלחה.</p>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-4 mt-8">
+                <button onclick="app.startMode('match')" class="glass-btn px-8 py-4 rounded-2xl font-bold text-lg">
+                    <i class="fa-solid fa-rotate-right me-2"></i> שחק שוב
+                </button>
+                <button onclick="app.goHome()" class="glass-btn px-8 py-4 rounded-2xl font-bold text-lg">
+                    <i class="fa-solid fa-house me-2"></i> תפריט ראשי
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // --- 1. Data Source ---
+        const vocabulary = [
+            { eng: "Sailed", heb: "הפליג" },
+            { eng: "Washed", heb: "שטף / רחץ" },
+            { eng: "Played", heb: "שיחק / ניגן" },
+            { eng: "Brushed", heb: "צחצח / הבריש" },
+            { eng: "Drilled", heb: "קדח" },
+            { eng: "Stayed", heb: "נשאר" },
+            { eng: "Listened", heb: "הקשיב" },
+            { eng: "Looked", heb: "הסתכל / הביט" },
+            { eng: "Called", heb: "קרא / טלפן" },
+            { eng: "Painted", heb: "צייר / צבע" },
+            { eng: "Opened", heb: "פתח" },
+            { eng: "Cleaned", heb: "ניקה" },
+            { eng: "Arrested", heb: "עצר (משטרה)" },
+            { eng: "Rested", heb: "נח" },
+            { eng: "Frightened", heb: "הפחיד / נבהל" },
+            { eng: "Smelled", heb: "הריח" },
+            { eng: "Sharpened", heb: "חידד" },
+            { eng: "Asked", heb: "שאל" },
+            { eng: "Warned", heb: "הזהיר" },
+            { eng: "Boiled", heb: "הרתיח" },
+            { eng: "Walked", heb: "הלך" },
+            { eng: "Worked", heb: "עבד" },
+            { eng: "Showed", heb: "הראה" },
+            { eng: "Watched", heb: "צפה" },
+            { eng: "Filled", heb: "מילא" },
+            { eng: "Pushed", heb: "דחף" },
+            { eng: "Whispered", heb: "לחש" },
+            { eng: "Jumped", heb: "קפץ" },
+            { eng: "Followed", heb: "עקב / הלך אחרי" },
+            { eng: "Shouted", heb: "צעק" }
+        ];
+
+        const app = {
+            currentMode: null,
+            
+            // Flashcard State
+            fcIndex: 0,
+            isFlipped: false,
+            get currentWord() { return vocabulary[this.fcIndex]; },
+            
+            // Pairs Match Game State
+            matchGridItems: [],
+            selectedMatchCard: null,
+            matchedPairs: 0,
+            TOTAL_PAIRS: 7,
+
+            audioCtx: null,
+
+            screens: {
+                home: document.getElementById('home-screen'),
+                flashcards: document.getElementById('flashcards-screen'),
+                match: document.getElementById('match-screen'),
+                matchEnd: document.getElementById('match-end-screen')
+            },
+
+            hideAllScreens() {
+                Object.values(this.screens).forEach(screen => screen.classList.add('hidden'));
+            },
+
+            showScreen(screenName) {
+                this.hideAllScreens();
+                this.screens[screenName].classList.remove('hidden');
+                
+                if (!this.audioCtx) {
+                    this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            },
+
+            goHome() {
+                this.currentMode = null;
+                this.showScreen('home');
+            },
+
+            startMode(mode) {
+                this.currentMode = mode;
+                if (mode === 'flashcards') {
+                    this.fcIndex = 0;
+                    this.isFlipped = false;
+                    document.getElementById('fc-total').textContent = vocabulary.length;
+                    this.renderFlashcard();
+                    this.showScreen('flashcards');
+                } else if (mode === 'match') {
+                    this.startPairsMatchGame();
+                }
+            },
+
+            playAudio(event, text) {
+                if(event) event.stopPropagation();
+                
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'en-US'; 
+                    utterance.rate = 0.9;
+                    
+                    const voices = window.speechSynthesis.getVoices();
+                    const preferredVoice = voices.find(voice => voice.lang === 'en-US' || voice.lang === 'en-GB');
+                    if (preferredVoice) utterance.voice = preferredVoice;
+
+                    window.speechSynthesis.speak(utterance);
+                }
+            },
+
+            playSuccessSound() {
+                if(!this.audioCtx) return;
+                const osc = this.audioCtx.createOscillator();
+                const gainNode = this.audioCtx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, this.audioCtx.currentTime); 
+                osc.frequency.exponentialRampToValueAtTime(1200, this.audioCtx.currentTime + 0.1); 
+                
+                gainNode.gain.setValueAtTime(0, this.audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.3, this.audioCtx.currentTime + 0.05);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 0.5);
+                
+                osc.connect(gainNode);
+                gainNode.connect(this.audioCtx.destination);
+                
+                osc.start();
+                osc.stop(this.audioCtx.currentTime + 0.5);
+            },
+
+            renderFlashcard() {
+                const card = document.getElementById('flashcard');
+                
+                this.isFlipped = false;
+                card.style.transition = 'none';
+                card.classList.remove('flipped');
+                
+                document.getElementById('fc-current').textContent = this.fcIndex + 1;
+                document.getElementById('fc-word-eng').textContent = this.currentWord.eng;
+                document.getElementById('fc-word-heb').textContent = this.currentWord.heb;
+                
+                const imgEl = document.getElementById('fc-image');
+                imgEl.src = `./images/${this.currentWord.eng}.jpg`;
+                
+                // Fallback inside JS to prevent initial DOM errors
+                imgEl.onerror = () => {
+                    imgEl.onerror = null;
+                    imgEl.src = `https://placehold.co/400x300/1e293b/ffffff?text=${this.currentWord.eng}`;
+                };
+
+                setTimeout(() => {
+                    card.style.transition = 'transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1)';
+                }, 50);
+            },
+
+            flipCard() {
+                this.isFlipped = !this.isFlipped;
+                const card = document.getElementById('flashcard');
+                if (this.isFlipped) card.classList.add('flipped');
+                else card.classList.remove('flipped');
+            },
+
+            nextCard() {
+                this.fcIndex = (this.fcIndex + 1) % vocabulary.length;
+                this.renderFlashcard();
+            },
+
+            prevCard() {
+                this.fcIndex = (this.fcIndex - 1 + vocabulary.length) % vocabulary.length;
+                this.renderFlashcard();
+            },
+
+            shuffleArray(array) {
+                const newArr = [...array];
+                for (let i = newArr.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
+                }
+                return newArr;
+            },
+
+            startPairsMatchGame() {
+                this.matchedPairs = 0;
+                this.selectedMatchCard = null;
+                document.getElementById('match-pairs-count').textContent = '0';
+                
+                // בחירת 7 מילים רנדומליות
+                const selectedWords = this.shuffleArray(vocabulary).slice(0, this.TOTAL_PAIRS);
+                
+                // יצירת 14 כרטיסיות (7 מילים באנגלית, 7 תמונות)
+                let items = [];
+                selectedWords.forEach(word => {
+                    items.push({ type: 'word', data: word, matched: false });
+                    items.push({ type: 'image', data: word, matched: false });
+                });
+                
+                // ערבוב הקלפים בלוח
+                this.matchGridItems = this.shuffleArray(items);
+                
+                this.renderMatchGrid();
+                this.showScreen('match');
+            },
+
+            renderMatchGrid() {
+                const container = document.getElementById('pairs-grid');
+                container.innerHTML = '';
+                
+                this.matchGridItems.forEach((item, index) => {
+                    const el = document.createElement('div');
+                    el.className = 'pair-card glass-panel cursor-pointer flex flex-col items-center justify-center rounded-2xl overflow-hidden relative';
+                    el.style.height = '140px'; 
+                    el.dataset.index = index;
+                    
+                    if (item.type === 'word') {
+                        el.innerHTML = `<span class="text-xl sm:text-2xl font-bold tracking-wide pointer-events-none text-center px-2" dir="ltr">${item.data.eng}</span>`;
+                        el.style.background = 'rgba(255,255,255,0.05)';
+                    } else {
+                        const imgSrc = `./images/${item.data.eng}.jpg`;
+                        const fallbackSrc = `https://placehold.co/200x200/1e293b/ffffff?text=${item.data.eng}`;
+                        el.innerHTML = `
+                            <img src="${imgSrc}" onerror="this.onerror=null; this.src='${fallbackSrc}';" class="w-full h-full object-cover pointer-events-none" alt="${item.data.heb}">
+                            <div class="absolute bottom-0 w-full bg-black/70 text-white text-sm sm:text-base font-semibold text-center py-1.5 pointer-events-none shadow-lg">${item.data.heb}</div>
+                        `;
+                    }
+                    
+                    el.onclick = () => this.handleCardClick(index);
+                    container.appendChild(el);
+                });
+            },
+
+            handleCardClick(index) {
+                const clickedItem = this.matchGridItems[index];
+                const clickedEl = document.querySelector(`.pair-card[data-index="${index}"]`);
+                
+                // התעלם מלחיצה על כרטיס שכבר הותאם או אם הלוח נעול
+                if (clickedItem.matched || clickedEl.style.pointerEvents === 'none') return;
+
+                // --- תוספת: הקראת המילה באנגלית מיד בלחיצה כדי לעזור לתלמיד ---
+                if (clickedItem.type === 'word') {
+                    this.playAudio(null, clickedItem.data.eng);
+                }
+                
+                // אם לחצנו על אותו כרטיס שכבר בחור - בטל בחירה
+                if (this.selectedMatchCard && this.selectedMatchCard.index === index) {
+                    clickedEl.classList.remove('selected-card');
+                    this.selectedMatchCard = null;
+                    return;
+                }
+                
+                // בחירה ראשונה של כרטיס
+                if (!this.selectedMatchCard) {
+                    this.selectedMatchCard = { index, item: clickedItem, el: clickedEl };
+                    clickedEl.classList.add('selected-card');
+                } 
+                // בחירה שנייה של כרטיס
+                else {
+                    const firstEl = this.selectedMatchCard.el;
+                    const firstItem = this.selectedMatchCard.item;
+                    
+                    // אם המשתמש לחץ על כרטיס מאותו סוג (מילה+מילה או תמונה+תמונה), החלף את הבחירה
+                    if (firstItem.type === clickedItem.type) {
+                        firstEl.classList.remove('selected-card');
+                        this.selectedMatchCard = { index, item: clickedItem, el: clickedEl };
+                        clickedEl.classList.add('selected-card');
+                        return;
+                    }
+                    
+                    // בדיקת התאמה בין מילה ותמונה
+                    if (firstItem.data.eng === clickedItem.data.eng) {
+                        // יש התאמה!
+                        firstEl.classList.remove('selected-card');
+                        firstEl.classList.add('matched-card');
+                        clickedEl.classList.add('matched-card');
+                        
+                        firstItem.matched = true;
+                        clickedItem.matched = true;
+                        this.selectedMatchCard = null;
+                        
+                        this.matchedPairs++;
+                        document.getElementById('match-pairs-count').textContent = this.matchedPairs;
+                        this.playSuccessSound();
+                        this.playAudio(null, firstItem.data.eng); 
+                        
+                        // בדיקה אם סיימנו את המשחק
+                        if (this.matchedPairs === this.TOTAL_PAIRS) {
+                            triggerConfetti();
+                            setTimeout(() => this.showScreen('matchEnd'), 1500);
+                        }
+                    } else {
+                        // אין התאמה (טעות) - חיווי ברור ואדום
+                        firstEl.classList.remove('selected-card'); // מסיר את צבע הבחירה הכחול
+                        
+                        firstEl.classList.add('error-card');
+                        clickedEl.classList.add('error-card');
+                        
+                        // נעילת לחיצות זמנית
+                        const allCards = document.querySelectorAll('.pair-card');
+                        allCards.forEach(c => {
+                            if (!this.matchGridItems[c.dataset.index].matched) {
+                                c.style.pointerEvents = 'none';
+                            }
+                        });
+                        
+                        // השהייה ארוכה יותר (שנייה) כדי שהתלמיד יקלוט את הטעות
+                        setTimeout(() => {
+                            firstEl.classList.remove('error-card');
+                            clickedEl.classList.remove('error-card');
+                            
+                            // שחרור נעילת לחיצות
+                            allCards.forEach(c => {
+                                if (!this.matchGridItems[c.dataset.index].matched) {
+                                    c.style.pointerEvents = 'auto';
+                                }
+                            });
+                        }, 1000);
+                        
+                        this.selectedMatchCard = null;
+                    }
+                }
+            },
+
+            confirmExitMatch() {
+                this.goHome();
+            }
+        };
+
+        const canvas = document.getElementById('confetti-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let animationId = null;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function triggerConfetti() {
+            const colors = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444'];
+            for (let i = 0; i < 80; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2 + 100,
+                    vx: (Math.random() - 0.5) * 20,
+                    vy: (Math.random() - 1) * 25,
+                    size: Math.random() * 10 + 5,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    rot: Math.random() * 360,
+                    rotSpeed: (Math.random() - 0.5) * 10
+                });
+            }
+
+            if (!animationId) animateConfetti();
+        }
+
+        function animateConfetti() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.6; // Gravity
+                p.rot += p.rotSpeed;
+
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rot * Math.PI / 180);
+                ctx.fillStyle = p.color;
+                ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+                ctx.restore();
+
+                if (p.y > canvas.height) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            if (particles.length > 0) {
+                animationId = requestAnimationFrame(animateConfetti);
+            } else {
+                animationId = null;
+            }
+        }
+
+        // Initialize voices on load to prevent delay on first click
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.getVoices();
+            window.speechSynthesis.onvoiceschanged = () => {
+                window.speechSynthesis.getVoices();
+            };
+        }
+
+    </script>
+</body>
+</html>
